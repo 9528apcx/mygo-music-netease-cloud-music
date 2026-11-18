@@ -5,7 +5,9 @@
   "minAppVersion": "0.1.20",
   "main": "index.js",
   "playback": "stream",
-  "permissions": { "network": ["music.163.com", "interfacepc.music.163.com"] },
+  "permissions": {
+    "network": ["music.163.com", "interfacepc.music.163.com", "interface3.music.163.com"]
+  },
   "settings": [
     {
       "key": "quality",

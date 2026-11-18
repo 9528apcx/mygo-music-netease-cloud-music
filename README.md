@@ -21,7 +21,7 @@ Use the plugin ZIP attached to a release for manual installation, not GitHub's s
 
 Subscription, purchase and regional restrictions still apply. Trial previews are not played as full songs. Liked songs are managed with song hearts, not playlist editing. Video playback and FM dislike/trash actions are not supported.
 
-Sessions are stored **unencrypted** in the host's plugin data files, not the system keychain. Session cookies go only to `music.163.com` and `interfacepc.music.163.com`.
+Sessions are stored **unencrypted** in the host's plugin data files, not the system keychain. Session cookies go only to `music.163.com`, `interfacepc.music.163.com`, and `interface3.music.163.com` (publishing Music Notes).
 
 ## Development
 

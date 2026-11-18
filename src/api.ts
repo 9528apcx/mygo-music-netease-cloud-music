@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Kaede Akino
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { EAPI, EAPI_KEY, EAPI_UA, SITE, UA } from "./constants.js";
+import { EAPI, EAPI_KEY, EAPI_UA, NOTE_PUBLISH_PATH, SITE, UA } from "./constants.js";
 import type { ApiStatus } from "./service-types.js";
 import { cookieHeader, load, save, session, storeCookies } from "./session.js";
 import type { Params } from "./types.js";
@@ -137,7 +137,8 @@ export async function eapi<T = object>(path: string, data: Params = {}, allowed 
   const digest = host.crypto.md5(`nobody${path}use${text}md5forencrypt`);
   const plain = `${path}-36cd479b6b5-${text}-36cd479b6b5-${digest}`;
   const params = host.crypto.aesEcbEncrypt(EAPI_KEY, plain).toUpperCase();
-  const result = await request<ApiStatus & T>(EAPI + path.replace(/^\/api\//, "/eapi/"), {
+  const origin = path === NOTE_PUBLISH_PATH ? "https://interface3.music.163.com" : EAPI;
+  const result = await request<ApiStatus & T>(origin + path.replace(/^\/api\//, "/eapi/"), {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",

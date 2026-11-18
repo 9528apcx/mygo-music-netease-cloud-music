@@ -3,6 +3,8 @@
 
 export const SITE = "https://music.163.com";
 
+export const NOTE_PUBLISH_PATH = "/api/note/share/friends/resource";
+
 export const EAPI = "https://interfacepc.music.163.com";
 
 export const EAPI_KEY = "e82ckenh8dichen8";

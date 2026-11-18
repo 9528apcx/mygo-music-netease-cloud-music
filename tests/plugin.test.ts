@@ -596,7 +596,11 @@ test("manifest loads a portable entry with only required network permissions", a
   const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
   assert.equal(manifest.version, pkg.version);
   assert.match(manifest.minAppVersion, /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/);
-  assert.deepEqual(manifest.permissions.network, ["music.163.com", "interfacepc.music.163.com"]);
+  assert.deepEqual(manifest.permissions.network, [
+    "music.163.com",
+    "interfacepc.music.163.com",
+    "interface3.music.163.com",
+  ]);
   assert.equal(manifest.permissions.process, undefined);
   assert.equal(manifest.main, "index.js");
   assert.equal(manifest.imageSizes, undefined);
@@ -701,4 +705,37 @@ test("album comment likes and unlikes target the album thread", async () => {
       ["/api/v1/comment/unlike", "R_AL_3_42", "8"],
     ],
   );
+});
+
+test("music notes attach songs and include the canonical album link", async () => {
+  const h = await harness(() => ({ id: 123 }), { signedIn: true });
+  await h.plugin.shareNote({ kind: "song", id: "52", text: " Listen to this " });
+  await h.plugin.shareNote({ kind: "album", id: "42", text: " My favorite album " });
+  assert.deepEqual(
+    h.calls.map(({ path, params, url }) => [
+      url.hostname,
+      path,
+      params.type,
+      params.id,
+      params.msg,
+    ]),
+    [
+      [
+        "interface3.music.163.com",
+        "/api/note/share/friends/resource",
+        "song",
+        "52",
+        "Listen to this\n\nhttps://music.163.com/song?id=52",
+      ],
+      [
+        "interface3.music.163.com",
+        "/api/note/share/friends/resource",
+        "noresource",
+        undefined,
+        "My favorite album\n\nhttps://music.163.com/album?id=42",
+      ],
+    ],
+  );
+  const guest = await harness(() => assert.fail("Guest attempted to publish"));
+  await assert.rejects(guest.plugin.shareNote({ kind: "song", id: "52", text: "" }), /Sign in/);
 });

@@ -13,6 +13,7 @@ export {
   postComment,
   replyComment,
 } from "./comments.js";
+export { shareNote } from "./notes.js";
 export { home } from "./discovery.js";
 export { lyrics, stream } from "./playback.js";
 export {

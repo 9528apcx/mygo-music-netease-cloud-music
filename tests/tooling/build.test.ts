@@ -63,7 +63,11 @@ test("bundle is standalone, preserves exports, metadata, locales and permissions
       await readFile(resolve(root, name)),
     );
   }
-  assert.deepEqual(manifest.permissions.network, ["music.163.com", "interfacepc.music.163.com"]);
+  assert.deepEqual(manifest.permissions.network, [
+    "music.163.com",
+    "interfacepc.music.163.com",
+    "interface3.music.163.com",
+  ]);
   assert.equal(manifest.permissions.process, undefined);
   // Catch cycles even when a bundler can silently flatten them.
   const visit = (path: string, chain: Set<string>) => {
