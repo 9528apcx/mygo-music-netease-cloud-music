@@ -21,6 +21,7 @@
   "navigation": [
     { "title": "For You", "builtin": "home", "icon": "home" },
     { "title": "Daily Recommendations", "page": "daily", "icon": "calendar" },
+    { "builtin": "savedAlbums" },
     { "title": "Personal FM", "builtin": "stations", "icon": "radio" },
     { "title": "Charts", "page": "charts", "icon": "chart" },
     { "title": "Podcasts", "page": "podcasts", "icon": "podcast" }
