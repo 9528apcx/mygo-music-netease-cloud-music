@@ -652,3 +652,32 @@ test("album details carry the introduction and album comments use their own thre
   assert.equal(page.comments[0]?.text, "Album comment");
   assert.equal(page.total, 30);
 });
+
+test("album comments expose author details and send replies to the selected comment", async () => {
+  const user = { userId: 7, nickname: "Listener", avatarUrl: "https://image.example/avatar" };
+  const makeComment = (content: string) => ({ commentId: 8, content, user, time: 1728000000000 });
+  const h = await harness(
+    ({ path, params }) => {
+      if (path === "/api/v1/resource/comments/R_AL_3_42")
+        return { comments: [makeComment("Original")] };
+      if (path.startsWith("/api/resource/comments/"))
+        return { comment: makeComment(String(params.content)) };
+    },
+    { signedIn: true },
+  );
+  const page = await h.plugin.albumComments({ id: "42" });
+  assert.equal(page.comments[0]?.authorId, "7");
+  assert.equal(page.comments[0]?.avatarUrl, "https://image.example/avatar");
+  assert.equal(page.comments[0]?.time, 1728000000000);
+  await h.plugin.postAlbumComment({ id: "42", text: " First " });
+  await h.plugin.postAlbumComment({ id: "42", text: " Reply ", replyTo: "8" });
+  assert.deepEqual(
+    h.calls
+      .slice(-2)
+      .map(({ path, params }) => [path, params.threadId, params.content, params.commentId]),
+    [
+      ["/api/resource/comments/add", "R_AL_3_42", "First", undefined],
+      ["/api/resource/comments/reply", "R_AL_3_42", "Reply", "8"],
+    ],
+  );
+});

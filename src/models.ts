@@ -109,6 +109,7 @@ export function toComment(c: ServiceComment) {
   return {
     id: String(c.commentId),
     author: c.user?.nickname || "",
+    authorId: c.user?.userId == null ? undefined : String(c.user.userId),
     avatarUrl: picture(c.user?.avatarUrl),
     text: c.content + (quote ? "\n\n" + tr("Replying to: {quote}", { quote }) : ""),
     time: c.time || 0,

@@ -48,12 +48,24 @@ export async function likeComment({
 }
 
 export async function postComment({ trackId, text }: CommentTarget & { text: string }) {
+  return submitComment(trackIdentity(trackId).thread, text);
+}
+
+export async function postAlbumComment({
+  id: albumId,
+  text,
+  replyTo,
+}: ByID & { text: string; replyTo?: string }) {
+  return submitComment(`R_AL_3_${id(albumId)}`, text, replyTo);
+}
+
+async function submitComment(threadId: string, text: string, replyTo?: string) {
   requireAccount();
   if (!text.trim()) throw new Error(tr("Comment cannot be empty"));
-  const result = await eapi<{ comment?: ServiceComment }>("/api/resource/comments/add", {
-    threadId: trackIdentity(trackId).thread,
-    content: text.trim(),
-  });
+  const result = await eapi<{ comment?: ServiceComment }>(
+    replyTo ? "/api/resource/comments/reply" : "/api/resource/comments/add",
+    { threadId, content: text.trim(), ...(replyTo ? { commentId: id(replyTo) } : {}) },
+  );
   if (!result.comment)
     throw new Error(
       tr("NetEase did not return the posted comment. Refresh to check before posting again."),

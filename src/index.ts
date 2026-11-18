@@ -4,7 +4,7 @@
 export { account, setSetting, signIn, signOut } from "./auth.js";
 export { browse } from "./browse.js";
 export { album, artist, followArtist, saveAlbum, savedAlbums } from "./catalog.js";
-export { albumComments, comments, likeComment, postComment } from "./comments.js";
+export { albumComments, comments, likeComment, postAlbumComment, postComment } from "./comments.js";
 export { home } from "./discovery.js";
 export { lyrics, stream } from "./playback.js";
 export {
