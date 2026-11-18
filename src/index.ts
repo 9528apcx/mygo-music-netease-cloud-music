@@ -7,6 +7,7 @@ export { album, artist, followArtist, saveAlbum, savedAlbums } from "./catalog.j
 export {
   albumComments,
   comments,
+  likeAlbumComment,
   likeComment,
   postAlbumComment,
   postComment,

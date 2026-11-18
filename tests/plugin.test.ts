@@ -689,3 +689,16 @@ test("album comments expose author details and send replies to the selected comm
     ],
   );
 });
+
+test("album comment likes and unlikes target the album thread", async () => {
+  const h = await harness(() => ({}), { signedIn: true });
+  await h.plugin.likeAlbumComment({ id: "42", commentId: "8", on: true });
+  await h.plugin.likeAlbumComment({ id: "42", commentId: "8", on: false });
+  assert.deepEqual(
+    h.calls.map(({ path, params }) => [path, params.threadId, params.commentId]),
+    [
+      ["/api/v1/comment/like", "R_AL_3_42", "8"],
+      ["/api/v1/comment/unlike", "R_AL_3_42", "8"],
+    ],
+  );
+});

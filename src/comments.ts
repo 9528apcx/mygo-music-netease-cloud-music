@@ -40,9 +40,21 @@ export async function likeComment({
   commentId,
   on,
 }: CommentTarget & { commentId: string; on: boolean }) {
+  return likeCommentInThread(trackIdentity(trackId).thread, commentId, on);
+}
+
+export async function likeAlbumComment({
+  id: albumId,
+  commentId,
+  on,
+}: ByID & { commentId: string; on: boolean }) {
+  return likeCommentInThread(`R_AL_3_${id(albumId)}`, commentId, on);
+}
+
+async function likeCommentInThread(threadId: string, commentId: string, on: boolean) {
   requireAccount();
   await eapi(`/api/v1/comment/${on ? "like" : "unlike"}`, {
-    threadId: trackIdentity(trackId).thread,
+    threadId,
     commentId: id(commentId),
   });
 }
