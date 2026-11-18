@@ -677,13 +677,15 @@ test("album comments expose author details and send replies to the selected comm
   assert.equal(page.comments[0]?.time, 1728000000000);
   await h.plugin.postAlbumComment({ id: "42", text: " First " });
   await h.plugin.postAlbumComment({ id: "42", text: " Reply ", replyTo: "8" });
+  await h.plugin.replyComment({ trackId: "52", commentId: "8", text: " Track reply " });
   assert.deepEqual(
     h.calls
-      .slice(-2)
+      .slice(-3)
       .map(({ path, params }) => [path, params.threadId, params.content, params.commentId]),
     [
       ["/api/resource/comments/add", "R_AL_3_42", "First", undefined],
       ["/api/resource/comments/reply", "R_AL_3_42", "Reply", "8"],
+      ["/api/resource/comments/reply", "R_SO_4_52", "Track reply", "8"],
     ],
   );
 });

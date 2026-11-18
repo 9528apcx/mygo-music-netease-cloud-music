@@ -51,6 +51,14 @@ export async function postComment({ trackId, text }: CommentTarget & { text: str
   return submitComment(trackIdentity(trackId).thread, text);
 }
 
+export async function replyComment({
+  trackId,
+  commentId,
+  text,
+}: CommentTarget & { commentId: string; text: string }) {
+  return submitComment(trackIdentity(trackId).thread, text, id(commentId));
+}
+
 export async function postAlbumComment({
   id: albumId,
   text,
