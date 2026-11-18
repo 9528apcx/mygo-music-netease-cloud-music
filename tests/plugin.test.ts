@@ -632,3 +632,23 @@ test("CDN covers ask the app for their size", async () => {
     ],
   );
 });
+
+test("album details carry the introduction and album comments use their own thread and offset", async () => {
+  const h = await harness(({ path, params }) => {
+    if (path === "/api/v1/album/42") {
+      return {
+        album: { id: 42, name: "Album", description: "Introduction\nSecond line" },
+        songs: [],
+      };
+    }
+    if (path === "/api/v1/resource/comments/R_AL_3_42" && params.offset === "20") {
+      return { comments: [{ commentId: 3, content: "Album comment", user: {} }], total: 30 };
+    }
+  });
+  const detail = await h.plugin.album({ id: "42" });
+  assert.equal(detail.description, "Introduction\nSecond line");
+  assert.equal(detail.hasComments, true);
+  const page = await h.plugin.albumComments({ id: "42", offset: 20 });
+  assert.equal(page.comments[0]?.text, "Album comment");
+  assert.equal(page.total, 30);
+});

@@ -29,6 +29,7 @@ export interface ServiceArtist {
   briefDesc?: string;
 }
 export interface ServiceAlbum {
+  description?: string;
   id?: ID;
   name?: string;
   picUrl?: string;

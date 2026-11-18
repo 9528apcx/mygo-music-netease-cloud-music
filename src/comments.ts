@@ -6,16 +6,23 @@ import { PAGE } from "./constants.js";
 import { toComment, trackIdentity } from "./models.js";
 import type { ServiceComment } from "./service-types.js";
 import { requireAccount } from "./session.js";
-import type { CommentTarget, PageOptions } from "./types.js";
+import type { ByID, CommentTarget, PageOptions } from "./types.js";
 import { id, offsetOf, tr } from "./utils.js";
 
 export async function comments({ trackId, offset = 0 }: CommentTarget & PageOptions) {
+  return threadComments(trackIdentity(trackId).thread, offset);
+}
+
+export async function albumComments({ id: albumId, offset = 0 }: ByID & PageOptions) {
+  return threadComments(`R_AL_3_${id(albumId)}`, offset);
+}
+
+async function threadComments(thread: string, offset: number) {
   const result = await web<{
     comments?: ServiceComment[];
-    hotComments?: ServiceComment[];
     total?: number;
     more?: boolean;
-  }>(`/api/v1/resource/comments/${trackIdentity(trackId).thread}`, {
+  }>(`/api/v1/resource/comments/${thread}`, {
     limit: PAGE,
     offset: offsetOf(offset),
   });

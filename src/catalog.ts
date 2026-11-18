@@ -23,7 +23,12 @@ export async function album({ id: aid }: ByID) {
     `/api/v1/album/${id(aid)}`,
   );
   if (!result.album) throw fail("unavailable", tr("Album not found"));
-  return { album: toAlbum(result.album), tracks: await hydrate(result.songs || []) };
+  return {
+    album: toAlbum(result.album),
+    tracks: await hydrate(result.songs || []),
+    description: result.album.description?.trim(),
+    hasComments: true,
+  };
 }
 
 export async function artistDetail(aid: string) {
