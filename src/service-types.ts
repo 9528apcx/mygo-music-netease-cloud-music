@@ -30,6 +30,7 @@ export interface ServiceArtist {
 }
 export interface ServiceAlbum {
   description?: string;
+  info?: { commentCount?: number };
   id?: ID;
   name?: string;
   picUrl?: string;

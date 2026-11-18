@@ -637,7 +637,12 @@ test("album details carry the introduction and album comments use their own thre
   const h = await harness(({ path, params }) => {
     if (path === "/api/v1/album/42") {
       return {
-        album: { id: 42, name: "Album", description: "Introduction\nSecond line" },
+        album: {
+          id: 42,
+          name: "Album",
+          description: "Introduction\nSecond line",
+          info: { commentCount: 30 },
+        },
         songs: [],
       };
     }
@@ -648,6 +653,7 @@ test("album details carry the introduction and album comments use their own thre
   const detail = await h.plugin.album({ id: "42" });
   assert.equal(detail.description, "Introduction\nSecond line");
   assert.equal(detail.hasComments, true);
+  assert.equal(detail.commentCount, 30);
   const page = await h.plugin.albumComments({ id: "42", offset: 20 });
   assert.equal(page.comments[0]?.text, "Album comment");
   assert.equal(page.total, 30);

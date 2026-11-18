@@ -28,6 +28,7 @@ export async function album({ id: aid }: ByID) {
     tracks: await hydrate(result.songs || []),
     description: result.album.description?.trim(),
     hasComments: true,
+    commentCount: result.album.info?.commentCount,
   };
 }
 
