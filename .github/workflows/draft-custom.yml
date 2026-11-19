@@ -47,6 +47,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           pnpm version:set "$VERSION"
+          pnpm exec prettier --write package.json plugin.json
           pnpm check
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
