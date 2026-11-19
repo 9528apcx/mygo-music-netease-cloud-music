@@ -1,0 +1,81 @@
+name: Sync upstream
+on:
+  schedule:
+    - cron: '23 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+env:
+  UPSTREAM: AkinoKaede/mygo-music-netease-cloud-music
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      ahead: ${{ steps.compare.outputs.ahead }}
+      upstream_sha: ${{ steps.compare.outputs.upstream_sha }}
+      custom_sha: ${{ steps.compare.outputs.custom_sha }}
+    steps:
+      - id: compare
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          base="$(gh api "repos/$GITHUB_REPOSITORY/branches/mygo-custom" --jq .commit.sha)"
+          head="$(gh api "repos/$UPSTREAM/branches/main" --jq .commit.sha)"
+          ahead="$(gh api "repos/$UPSTREAM/compare/$base...$head" --jq .ahead_by)"
+          echo "ahead=$ahead" >> "$GITHUB_OUTPUT"
+          echo "upstream_sha=$head" >> "$GITHUB_OUTPUT"
+          echo "custom_sha=$base" >> "$GITHUB_OUTPUT"
+  pull-request:
+    needs: detect
+    if: needs.detect.outputs.ahead != '0'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          head="${UPSTREAM%%/*}:main"
+          if [ "$(gh api -X GET "repos/$GITHUB_REPOSITORY/pulls" -f base=mygo-custom -f head="$head" -f state=open --jq length)" = 0 ]; then
+            gh api "repos/$GITHUB_REPOSITORY/pulls" \
+              -f title='Sync upstream main' -f base=mygo-custom -f head="$head" \
+              -f head_repo="${UPSTREAM#*/}" \
+              -f body='Review the Sync upstream workflow results before merging. Use a merge commit to retain upstream history.' --jq .html_url
+          fi
+  verify:
+    needs: detect
+    if: needs.detect.outputs.ahead != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ needs.detect.outputs.custom_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Merge in the runner
+        env:
+          UPSTREAM_SHA: ${{ needs.detect.outputs.upstream_sha }}
+        run: |
+          git fetch --no-tags "https://github.com/$UPSTREAM.git" "$UPSTREAM_SHA"
+          git -c user.name=automation -c user.email=automation@localhost merge --no-edit FETCH_HEAD
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115
+        with:
+          cache: true
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: plugin-preview
+          path: dist/release/
+          if-no-files-found: error
