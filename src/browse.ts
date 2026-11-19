@@ -3,12 +3,10 @@
 
 import { web } from "./api.js";
 import {
-  allFollowedArtists,
   artistAlbums,
   artistBrowseHeader,
   artistDetail,
   artistLatest,
-  followedArtists,
   savedAlbums,
 } from "./catalog.js";
 import { ARTIST_PAGE, PAGE } from "./constants.js";
@@ -81,17 +79,6 @@ export async function browse({ page }: { page: string }): Promise<Browse> {
       sections: [
         { albums: result.albums },
         ...nextSection(name, { offset: offset + PAGE }, result.more && result.albums.length),
-      ],
-    };
-  }
-  if (name === "following") {
-    const result = await followedArtists(offset);
-    return {
-      title: tr("Followed Artists"),
-      sections: [
-        { artists: result.artists, empty: tr("No followed artists yet") },
-        { title: tr("New Releases"), links: result.artists.map(artistLink) },
-        ...nextSection(name, { offset: offset + PAGE }, result.more),
       ],
     };
   }
@@ -303,11 +290,10 @@ export async function profilePlaylistsPage(uid: string, kind: string | null, off
 export async function profilePage(uid: string) {
   const generation = session.epoch;
   const own = accountNow()?.id === uid;
-  const [person, lists, subscriptions, artists] = await Promise.allSettled([
+  const [person, lists, subscriptions] = await Promise.allSettled([
     web<{ profile?: ServiceUser }>(`/api/v1/user/detail/${uid}`),
     userPlaylists(uid),
     own ? shows() : Promise.resolve([]),
-    own ? allFollowedArtists() : Promise.resolve([]),
   ]);
   if (generation !== session.epoch) throw new Error(tr("The account changed. Reload this page."));
   if (person.status === "rejected") throw person.reason;
@@ -334,15 +320,6 @@ export async function profilePage(uid: string) {
             empty: tr("No subscribed podcasts yet"),
           }
         : retrySection(tr("Subscribed Podcasts"), retryPage, subscriptions.reason),
-    );
-    sections.push(
-      artists.status === "fulfilled"
-        ? {
-            title: tr("Followed Artists"),
-            artists: artists.value,
-            empty: tr("No followed artists yet"),
-          }
-        : retrySection(tr("Followed Artists"), retryPage, artists.reason),
     );
   }
   // The host places subtitle above the name and description lines below it.

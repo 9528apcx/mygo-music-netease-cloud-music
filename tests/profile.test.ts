@@ -24,7 +24,6 @@ function profileResponse({ path }: Pick<Call, "path">, lists: ReturnType<typeof 
   if (path.startsWith("/api/v1/user/detail/")) return { profile: person };
   if (path === "/api/user/playlist") return { playlist: lists };
   if (path === "/api/djradio/get/subed") return { djRadios: [] };
-  if (path === "/api/artist/sublist") return { data: [] };
 }
 
 // Liked songs must stay reachable as a fixed own playlist, not a saved playlist.
@@ -149,11 +148,9 @@ test("own profile uses native header order and keeps all public playlists inline
     present(page.sections[0].playlists).map((p) => p.id),
     publicLists.map((p) => String(p.id)),
   );
-  assert.equal(page.sections.length, 3);
+  assert.equal(page.sections.length, 2);
   assert.deepEqual(page.sections[1].shows, []);
-  assert.deepEqual(page.sections[2].artists, []);
   assert.ok(page.sections[1].empty);
-  assert.ok(page.sections[2].empty);
   for (const section of page.sections) assert.equal(section.morePage, undefined);
   const first = await h.plugin.browse({ page: "profile-playlists?kind=created" });
   assert.deepEqual(
@@ -168,25 +165,18 @@ test("own profile uses native header order and keeps all public playlists inline
   assert.equal(last.sections.length, 1);
   assert.ok(
     h.calls.every((c) =>
-      [
-        "/api/v1/user/detail/7",
-        "/api/user/playlist",
-        "/api/djradio/get/subed",
-        "/api/artist/sublist",
-      ].includes(c.path),
+      ["/api/v1/user/detail/7", "/api/user/playlist", "/api/djradio/get/subed"].includes(c.path),
     ),
   );
 });
 
 // Profile collections must include every API page, not just the old six-item preview.
-test("profile fully expands paginated playlists, podcasts and followed artists", async () => {
+test("profile fully expands paginated playlists and podcasts", async () => {
   const playlists = Array.from({ length: 205 }, (_, i) => playlist(i + 10));
   const podcasts = Array.from({ length: 105 }, (_, i) => ({ id: i + 300, name: `Show ${i}` }));
-  const artists = Array.from({ length: 55 }, (_, i) => ({ id: i + 500, name: `Artist ${i}` }));
   const collections: Record<string, [unknown[], string, string]> = {
     "/api/user/playlist": [playlists, "playlist", "more"],
     "/api/djradio/get/subed": [podcasts, "djRadios", "hasMore"],
-    "/api/artist/sublist": [artists, "data", "hasMore"],
   };
   const h = await harness(
     (call) => {
@@ -208,17 +198,11 @@ test("profile fully expands paginated playlists, podcasts and followed artists",
     present(page.sections[1].shows).map((p) => p.id),
     podcasts.map((p) => String(p.id)),
   );
-  assert.deepEqual(
-    present(page.sections[2].artists).map((p) => p.id),
-    artists.map((p) => String(p.id)),
-  );
   assert.ok(present(page.sections[1].shows).every((p) => p.subscribed));
-  assert.ok(present(page.sections[2].artists).every((p) => p.following));
   for (const section of page.sections) assert.equal(section.morePage, undefined);
   for (const [path, offsets] of [
     ["/api/user/playlist", [0, 200]],
     ["/api/djradio/get/subed", [0, 100]],
-    ["/api/artist/sublist", [0, 50]],
   ])
     assert.deepEqual(
       h.calls.filter((c) => c.path === path).map((c) => Number(c.params.offset)),
@@ -226,46 +210,13 @@ test("profile fully expands paginated playlists, podcasts and followed artists",
     );
 });
 
-// A contradictory hasMore on an empty page must not keep loading forever.
-test("expanded followed artists stop on an empty continuation", async () => {
-  const h = await harness(
-    (call) =>
-      call.path === "/api/artist/sublist"
-        ? { data: Number(call.params.offset) === 0 ? [{ id: 1 }] : [], hasMore: true }
-        : profileResponse(call),
-    { signedIn: true },
-  );
-  const page = await h.plugin.browse({ page: "profile" });
-  assert.deepEqual(
-    present(page.sections[2].artists).map((a) => a.id),
-    ["1"],
-  );
-  assert.equal(h.calls.filter((c) => c.path === "/api/artist/sublist").length, 2);
-});
-
-// A failed later page must not pass a truncated artist collection off as complete.
-test("failed artist continuation retries the whole profile without duplicate items", async () => {
-  let fail = true;
-  const h = await harness(
-    (call) => {
-      if (call.path !== "/api/artist/sublist") return profileResponse(call);
-      if (Number(call.params.offset) === 0) return { data: [{ id: 1 }], hasMore: true };
-      if (fail) throw new Error("offline");
-      return { data: [{ id: 2 }], hasMore: false };
-    },
-    { signedIn: true },
-  );
-  const page = await h.plugin.browse({ page: "profile" });
-  assert.equal(page.sections[2].artists, undefined);
-  const retry = present(page.sections[2].links)[0].page;
-  assert.equal(new URL(retry, "https://plugin.invalid/").pathname, "/profile");
-  fail = false;
-  const recovered = await h.plugin.browse({ page: retry });
-  assert.equal(recovered.sections.length, 3);
-  assert.deepEqual(
-    present(recovered.sections[2].artists).map((a) => a.id),
-    ["1", "2"],
-  );
+// Old links must not fetch the retired list.
+test("the removed followed artists route makes no request", async () => {
+  const h = await harness(() => assert.fail("The removed route attempted a request"), {
+    signedIn: true,
+  });
+  await assert.rejects(h.plugin.browse({ page: "following" }), { code: "unavailable" });
+  assert.equal(h.calls.length, 0);
 });
 
 // Profile counts use the reference client's Chinese units without imposing them on English.
@@ -345,7 +296,7 @@ test("empty profile keeps its sections without fabricated header content", async
     assert.equal(section.morePage, undefined);
     assert.equal(section.links, undefined);
   }
-  assert.equal(page.sections.length, 3);
+  assert.equal(page.sections.length, 2);
 });
 
 // Failed collections must remain retryable and must not masquerade as empty.
@@ -365,7 +316,7 @@ test("profile section failures lead to fresh working retry pages", async () => {
     const target = present(section.links)[0].page;
     assert.ok(new URL(target, "https://plugin.invalid/").searchParams.has("retry"));
     const recovered = await h.plugin.browse({ page: target });
-    assert.equal(recovered.sections.length, 3);
+    assert.equal(recovered.sections.length, 2);
     assert.equal(recovered.sections[0].links, undefined);
   }
 });
@@ -409,7 +360,6 @@ test("logout stops profile collection pagination", async () => {
   for (const [path, response] of [
     ["/api/user/playlist", { playlist: [playlist(1)], more: true }],
     ["/api/djradio/get/subed", { djRadios: [{ id: 2 }], hasMore: true }],
-    ["/api/artist/sublist", { data: [{ id: 3 }], hasMore: true }],
   ] as const) {
     let release!: () => void, started!: () => void;
     const ready = new Promise<void>((resolve) => {

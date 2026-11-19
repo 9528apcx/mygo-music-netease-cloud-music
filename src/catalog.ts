@@ -140,25 +140,3 @@ export async function savedAlbums({ offset = 0 } = {}) {
     more: !!result.hasMore,
   };
 }
-
-export async function followedArtists(offset = 0) {
-  requireAccount();
-  const generation = session.epoch;
-  const result = await web<{ data?: ServiceArtist[]; hasMore?: boolean }>("/api/artist/sublist", {
-    limit: PAGE,
-    offset: offsetOf(offset),
-    total: true,
-  });
-  if (generation !== session.epoch) throw new Error(tr("The account changed. Reload this page."));
-  const artists = (result.data || []).map((artist) => ({ ...toArtist(artist), following: true }));
-  return { artists, more: !!result.hasMore && artists.length > 0 };
-}
-
-export async function allFollowedArtists() {
-  const all = [];
-  for (let offset = 0; ; offset += PAGE) {
-    const result = await followedArtists(offset);
-    all.push(...result.artists);
-    if (!result.more) return all;
-  }
-}
