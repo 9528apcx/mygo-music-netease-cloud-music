@@ -33,5 +33,5 @@ export {
 } from "./playlists.js";
 export { show, shows, subscribeShow } from "./podcasts.js";
 export { stationNext, stations } from "./radio.js";
-export { played, recent } from "./recent.js";
+export { played, recent, scrobble } from "./recent.js";
 export { search, suggest } from "./search.js";

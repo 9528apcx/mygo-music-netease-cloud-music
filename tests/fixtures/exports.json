@@ -30,6 +30,7 @@
   "saveAlbum",
   "savePlaylist",
   "savedAlbums",
+  "scrobble",
   "search",
   "setSetting",
   "shareNote",

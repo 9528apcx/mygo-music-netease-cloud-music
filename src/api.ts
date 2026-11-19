@@ -122,7 +122,8 @@ export async function eapi<T = object>(path: string, data: Params = {}, allowed 
   const header: Record<string, string> = {
     osver: "Microsoft-Windows-10-Professional-build-19045-64bit",
     deviceId: deviceID(),
-    os: "pc",
+    // Listening feedback uses the desktop protocol's osx client identity.
+    os: path === "/api/feedback/weblog" ? "osx" : "pc",
     appver: "3.1.17.204416",
     versioncode: "140",
     mobilename: "",

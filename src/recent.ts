@@ -43,6 +43,48 @@ export async function played({ id: value }: ByID) {
     [track] = await details([value]);
   }
   if (generation === session.epoch && track) rememberTrack(track);
+  if (generation === session.epoch && accountNow() && !identity.program) {
+    await eapi("/api/feedback/weblog", {
+      logs: JSON.stringify([
+        {
+          action: "startplay",
+          json: {
+            id: identity.audio,
+            type: "song",
+            mainsite: "1",
+            mainsiteWeb: "1",
+            content: "id=0",
+          },
+        },
+      ]),
+    });
+  }
+}
+
+export async function scrobble({ id: value, seconds }: ByID & { seconds: number }) {
+  if (!Number.isFinite(seconds) || seconds < 1) throw new Error("Invalid listened duration");
+  const identity = trackIdentity(value);
+  if (!accountNow() || identity.program) return;
+  await eapi("/api/feedback/weblog", {
+    logs: JSON.stringify([
+      {
+        action: "play",
+        json: {
+          id: identity.audio,
+          type: "song",
+          time: Math.floor(seconds),
+          end: "playend",
+          source: "list",
+          sourceId: "0",
+          content: "id=0",
+          download: 0,
+          wifi: 0,
+          mainsite: "1",
+          mainsiteWeb: "1",
+        },
+      },
+    ]),
+  });
 }
 
 export function rememberTrack(track: Track) {
